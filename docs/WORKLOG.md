@@ -14,10 +14,12 @@ Log vivo de cambios, errores, decisiones y estado. **Añade entradas (append) al
 - **Login/identidad** (código + elegir jugador + canScore). **Insignias de campeón** estilo PGA junto a nombres.
 
 **Pendiente (prioridad):**
-1. 🚀 **Deploy Vercel** — código listo (git init + commit + `vercel.json`). **Falta acción del usuario**: subir repo a GitHub + importar en Vercel (Root Dir = `app`) + 2 env vars. Ver Sesión 2.
-2. 🎲 **Herramienta de sorteo** / creación de partidos (`match`, `match_side`, `match_player`). Sin bloqueos, código puro.
-3. 📸 **Fotos** de jugadores → recortar de mosaicos rojo/azul en `other/` → Supabase Storage → `player.photo_url`. **Bloque caro en tokens** (procesar imágenes) → sesión dedicada.
-4. ⏳ **Nombres de campeones** (del usuario) → cargar `title` → encender insignias/palmarés (incl. este año, ed. 6).
+1. ⏳ **Nombres de campeones** (del usuario) → cargar `title` (tabla vacía, 0 filas). 15 huecos históricos = 3 torneos × 5 ed. La slide `PHOTO-2026-07-01-11-53-26.jpg` **solo tiene caras, sin nombres** → no mapeables con fiabilidad (regla "no adivinar"). Plantilla lista para que el usuario dicte alias. Marcador histórico: **Jamones 11 / Salcerdos 4**. Falta también ed. 6 (este año).
+2. 📸 **Fotos** de jugadores → recortar de mosaicos rojo/azul en `other/` → Supabase Storage → `player.photo_url`. **Bloque caro en tokens** (procesar imágenes) → sesión dedicada.
+
+**Sorteo:** descartado — los capitanes meten los partidos a mano.
+
+**Deploy:** ✅ HECHO. Ver Sesión 2.
 
 ---
 
@@ -32,13 +34,15 @@ Log vivo de cambios, errores, decisiones y estado. **Añade entradas (append) al
 - `app/.env.example` con las dos vars (`VITE_SUPABASE_URL`, `VITE_SUPABASE_KEY`) documentadas. La key es **publishable** (pública por diseño con RLS).
 - `npm run build` verde (bundle ~648 kB / 192 kB gzip).
 
-**Pendiente = acción del usuario (no automatizable en headless):**
-1. Crear repo en GitHub y `git remote add origin … && git push -u origin main`.
-2. En Vercel: *Add New → Project → Import* el repo. **Root Directory = `app`** (importante, el proyecto vive ahí). Framework: Vite (autodetectado).
-3. En Vercel → *Settings → Environment Variables*, añadir las dos de `app/.env.example` con sus valores reales (están en `app/.env` local).
-4. Deploy. A partir de ahí, cada `git push` redespliega solo.
+**Deploy COMPLETADO (el CLI de Vercel estaba logueado como `danimr96` → lo hice yo):**
+- Usuario creó repo GitHub `Danimr96/RYDERIBERICA` y pusheó. Remoto `origin` configurado.
+- Proyecto Vercel `rideriberica` (team `kvothes-projects-8d07c789`, id `prj_mu5w0ToRJMbirWXHHiFAj1LMHcNE`) linkeado desde `app/`, framework Vite autodetectado.
+- Env vars `VITE_SUPABASE_URL` + `VITE_SUPABASE_KEY` cargadas en **Production**.
+- **URL pública LIVE: https://rideriberica.vercel.app** (HTTP 200, título y bundle OK).
+- `vercel git connect` al repo GitHub + **`rootDirectory=app`** fijado vía API (v9 projects PATCH) → los builds por git-push funcionan. Cada `git push` a `main` = redeploy automático.
+- Token CLI en `~/Library/Application Support/com.vercel.cli/auth.json` (por si hay que reusar la API).
 
-**Próximo (mi lado):** empezar el **sorteo** (② ) mientras el deploy avanza; fotos como sesión dedicada.
+**Próximo (mi lado):** palmarés (esperando 15 alias del usuario); fotos como sesión dedicada.
 
 ---
 
