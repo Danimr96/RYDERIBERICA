@@ -17,9 +17,29 @@ Log vivo de cambios, errores, decisiones y estado. **Añade entradas (append) al
 1. 📸 **Fotos** de jugadores → recortar de mosaicos en `other/` → Supabase Storage → `player.photo_url`. **Bloque caro en tokens** (procesar imágenes) → sesión dedicada. **Mapeo confirmado por el usuario: mosaico ROJO = Salcerdos 🔴 / mosaico AZUL = Jamones 🔵.** Falta identificar qué archivo de `other/` es cada mosaico y el orden de las caras.
 2. 🏆 **Campeones ed. 6 (este año)** de los 3 torneos Pre-Ryder → cuando se jueguen/los pase el usuario, insertar en `title` con `edition_number=6` (aparecen en la sección "Campeones 6ª edición" de Palmarés).
 
-**Sorteo:** descartado — los capitanes meten los partidos a mano.
+**Creación de partidos:** ✅ HECHO — **panel de capitán** (Sesión 4). Cada capitán mete la alineación de su lado; partido completo cuando ambos. (Sorteo aleatorio con ruleta: descartado por el usuario.)
 
 **Deploy:** ✅ HECHO (Sesión 2). **Palmarés histórico:** ✅ HECHO (Sesión 3).
+
+---
+
+## 2026-07-01 — Sesión 4 (panel de capitán: crear partidos)
+
+**Contexto:** el usuario preguntó cómo se creaban partidos/resultados hoy. Diagnóstico (agente Explore): meter **resultados** ya funcionaba (`MatchEntry`, `canScore`: jugador→sus partidos, capitán→todos), pero **crear partidos NO existía** (Draw/Matches solo lectura, store solo-lectura). Decidido: construir panel de capitán. Permisos: **cada capitán solo asigna a los suyos**.
+
+**Hecho:**
+- Migración `match_unique_session_number`: único `(session_id, number)` en `match` (get-or-create sin duplicados).
+- Nueva página `src/pages/Captain.tsx` (ruta `/capitan`, tab de nav 🧢 solo si `is_captain`):
+  - Tabs Sábado (scramble 2v2, 5 huecos) / Domingo (singles 1v1, 10 huecos). Nº huecos = `ceil(nJugadoresEquipo/perSide)`.
+  - Selects que ofrecen **solo jugadores de mi equipo**, sin repetir (filtra usados). Muestra la alineación **rival en solo lectura** por hueco.
+  - Guardar escribe **solo mi lado**: `ensureMatch` (get-or-create) → crea **ambos shells de lado** (a=Salcerdos, b=Jamones; el del rival vacío sin pisar sus jugadores) → `upsert`/update de mi `match_side` (con `playing_handicap` vía `sidePlayingHandicap`) → reemplaza `match_player` de mi lado. Luego `refetch()`.
+- **Convención fija de lados**: side `a` = Salcerdos 🔴 / side `b` = Jamones 🔵 (en `Captain.tsx` `SIDE_OF`). Documentado en DATA-MODEL.
+- Persistencia directa vía `supabase` en el componente (mismo patrón que `MatchEntry`), store sigue solo-lectura.
+- Build verde, lint solo warnings (el `exhaustive-deps` de Captain es intencionado: incluir `matches` pisaría la edición en curso).
+
+**Notas / pendientes de esta feature:**
+- **Sin RLS real**: la restricción "capitán solo los suyos" es **client-side** (como todo en la app; no hay Supabase Auth, identidad por localStorage + código). Un usuario técnico podría saltárselo. Aceptable para el grupo de amigos; si se quisiera blindar haría falta Auth + RLS.
+- No hay UI para borrar un partido entero ni editar `tee_time` (se pueden meter por MCP si hace falta).
 
 ---
 

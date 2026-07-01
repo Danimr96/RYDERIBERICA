@@ -16,6 +16,11 @@ export default function App() {
   const { ready, me, isSpectator, logout } = useIdentity()
   const loc = useLocation()
 
+  // Los capitanes ven un tab extra para crear/editar partidos.
+  const nav = me?.is_captain
+    ? [...NAV.slice(0, 4), { to: '/capitan', label: 'Capitán', icon: '🧢', end: false }, ...NAV.slice(4)]
+    : NAV
+
   if (!loading && !ready) return <Login />
 
   return (
@@ -52,7 +57,7 @@ export default function App() {
 
       {/* Navegación inferior */}
       <nav className="safe-b fixed inset-x-0 bottom-0 z-30 mx-auto flex w-full max-w-md items-stretch justify-around border-t border-line/60 bg-ink/90 px-2 pt-1.5 backdrop-blur-md">
-        {NAV.map((n) => (
+        {nav.map((n) => (
           <NavLink
             key={n.to}
             to={n.to}

@@ -12,6 +12,7 @@ import Teams from './pages/Teams'
 import PlayerPage from './pages/PlayerPage'
 import Draw from './pages/Draw'
 import Palmares from './pages/Palmares'
+import Captain from './pages/Captain'
 
 const router = createBrowserRouter([
   {
@@ -24,6 +25,7 @@ const router = createBrowserRouter([
       { path: 'equipos', element: <Teams /> },
       { path: 'jugador/:id', element: <PlayerPage /> },
       { path: 'sorteo', element: <Draw /> },
+      { path: 'capitan', element: <Captain /> },
       { path: 'palmares', element: <Palmares /> },
     ],
   },

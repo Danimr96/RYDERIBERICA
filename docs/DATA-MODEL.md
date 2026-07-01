@@ -12,7 +12,7 @@ Proyecto Supabase **`RiderIberica`** (id `qflxrwpzjrrfhqmzcler`). Schema `public
 - **hole** (1..18): par, stroke_index.
 - **session** (`saturday`/`sunday`): name, day, format (`scramble_doubles`/`singles`), handicap_allowance, sort_order, status.
 - **match**: session_id, number, status (`scheduled`/`live`/`finished`), winner, points_a/b, thru, state_label, tee_time, updated_at.
-- **match_side**: match_id, side (`a`/`b`), team_id, playing_handicap. (único por match+side)
+- **match_side**: match_id, side (`a`/`b`), team_id, playing_handicap. (único por match+side). **Convención fija: side `a` = Salcerdos 🔴 · side `b` = Jamones 🔵.** `match` tiene único `(session_id, number)` (constraint `match_session_number_uniq`) para get-or-create desde el panel de capitán.
 - **match_player**: match_side_id, player_id. (1 individual / 2 scramble)
 - **hole_score**: match_id, hole_number, gross_a, gross_b, winner, updated_at. (único por match+hole)
 - **tournament** (`5js`/`espetec`/`masterpig`): name, short (5J/ESP/MP), emoji, color, sort_order.
