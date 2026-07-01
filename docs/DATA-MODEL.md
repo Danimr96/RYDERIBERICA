@@ -16,7 +16,18 @@ Proyecto Supabase **`RiderIberica`** (id `qflxrwpzjrrfhqmzcler`). Schema `public
 - **match_player**: match_side_id, player_id. (1 individual / 2 scramble)
 - **hole_score**: match_id, hole_number, gross_a, gross_b, winner, updated_at. (único por match+hole)
 - **tournament** (`5js`/`espetec`/`masterpig`): name, short (5J/ESP/MP), emoji, color, sort_order.
-- **title**: player_id, tournament_id, edition_number (1..6), is_current, note. → insignias/palmarés.
+- **title**: player_id (null si el campeón no está en el roster actual), tournament_id, edition_number (1..6), is_current, note, **champion_name** (nombre a mostrar para externos), **team_id** (equipo del título, para marcador/color). → insignias/palmarés.
+
+### Palmarés histórico cargado (ed. 1-5) — 15 títulos · Jamones 11 / Salcerdos 4
+Fuente: slide `other/PHOTO-2026-07-01-11-53-26.jpg` (solo caras) + nombres dictados por el usuario. `is_current=true` en la 5ª ed. (vigentes). **No reabrir la imagen**, los datos están aquí.
+
+| Torneo | 1ª | 2ª | 3ª | 4ª | 5ª (vigente) |
+|---|---|---|---|---|---|
+| 🖐️ 5Js CUP | Peju | *Artaza* 🔴 | P. Narváez | Monsal | **P. Narváez** |
+| 🌭 Espetec Open | *Diego DLR* 🔵 | Peju | P. Narváez | *Juan Ortiz* 🔴 | **Edu War** |
+| 🐷 Master Pig | Lasso | Lasso | P. Narváez | *Cubillo* 🔵 | **Dani** |
+
+*En cursiva = campeones externos* (jugadores pasados que no juegan la ed. 6, `player_id` null): Artaza 🔴, Juan Ortiz 🔴 (Salcerdos); Diego DLR 🔵, Cubillo 🔵 (Jamones). Resto = alias del roster. Pelayo Narváez tiene 4 títulos (toda la 3ª ed. + 5Js 5ª).
 
 ## Roster (20 jugadores) — alias · V-D-E · hcp
 

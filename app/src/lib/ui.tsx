@@ -51,6 +51,36 @@ export function Avatar({
   )
 }
 
+/** Avatar para campeones históricos sin ficha de jugador (iniciales + color de equipo). */
+export function ExtAvatar({
+  name,
+  teamId,
+  size = 44,
+  ring = true,
+}: {
+  name: string
+  teamId: TeamId
+  size?: number
+  ring?: boolean
+}) {
+  const c = TEAM_COLORS[teamId]
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: '9999px',
+        boxShadow: ring ? `0 0 0 2px ${c.main}` : undefined,
+        background: c.grad,
+        fontSize: size * 0.34,
+      }}
+      className="grid place-items-center font-extrabold text-white shrink-0 tnum"
+    >
+      {initials(name)}
+    </div>
+  )
+}
+
 export function TeamPill({ team, className = '' }: { team: TeamId; className?: string }) {
   const c = TEAM_COLORS[team]
   return (

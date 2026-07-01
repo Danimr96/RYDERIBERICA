@@ -14,12 +14,29 @@ Log vivo de cambios, errores, decisiones y estado. **Añade entradas (append) al
 - **Login/identidad** (código + elegir jugador + canScore). **Insignias de campeón** estilo PGA junto a nombres.
 
 **Pendiente (prioridad):**
-1. ⏳ **Nombres de campeones** (del usuario) → cargar `title` (tabla vacía, 0 filas). 15 huecos históricos = 3 torneos × 5 ed. La slide `PHOTO-2026-07-01-11-53-26.jpg` **solo tiene caras, sin nombres** → no mapeables con fiabilidad (regla "no adivinar"). Plantilla lista para que el usuario dicte alias. Marcador histórico: **Jamones 11 / Salcerdos 4**. Falta también ed. 6 (este año).
-2. 📸 **Fotos** de jugadores → recortar de mosaicos rojo/azul en `other/` → Supabase Storage → `player.photo_url`. **Bloque caro en tokens** (procesar imágenes) → sesión dedicada.
+1. 📸 **Fotos** de jugadores → recortar de mosaicos rojo/azul en `other/` → Supabase Storage → `player.photo_url`. **Bloque caro en tokens** (procesar imágenes) → sesión dedicada.
+2. 🏆 **Campeones ed. 6 (este año)** de los 3 torneos Pre-Ryder → cuando se jueguen/los pase el usuario, insertar en `title` con `edition_number=6` (aparecen en la sección "Campeones 6ª edición" de Palmarés).
 
 **Sorteo:** descartado — los capitanes meten los partidos a mano.
 
-**Deploy:** ✅ HECHO. Ver Sesión 2.
+**Deploy:** ✅ HECHO (Sesión 2). **Palmarés histórico:** ✅ HECHO (Sesión 3).
+
+---
+
+## 2026-07-01 — Sesión 3 (deploy ejecutado + palmarés histórico)
+
+**Deploy:** ejecutado vía CLI de Vercel (ver detalle en Sesión 2, actualizada). **LIVE en https://rideriberica.vercel.app**, auto-deploy por git-push probado.
+
+**Palmarés histórico cargado (los 15 títulos ed. 1-5):**
+- Usuario dictó los campeones leyendo la slide `PHOTO-2026-07-01-11-53-26.jpg` (solo caras) columna×columna. Parse validado: 3ª ed. entera = Pelayo Narváez (coincide con la cara repetida de la slide) y checksum **Jamones 11 / Salcerdos 4** exacto. Datos completos en `DATA-MODEL.md`.
+- **Campeones externos**: 4 campeones (Artaza 🔴, Juan Ortiz 🔴, Diego DLR 🔵, Cubillo 🔵) son jugadores pasados que NO están en el roster de la ed. 6. Como la UI resolvía campeón solo vía `player_id→player`, se añadió soporte:
+  - Migración aditiva `title_add_external_champion_fields`: columnas `champion_name` + `team_id` en `title`.
+  - `types.ts` Title ampliado; `ui.tsx` nuevo `ExtAvatar` (iniciales + color de equipo); `Palmares.tsx` refactor con tipo `Champ` (player | ext), helper `ChampFace`, tally por equipo contando externos.
+  - Fix: `hasCurrent` ahora comprueba `edition_number===current` (antes se activaba con `is_current` y ocultaba mal el aviso "sin campeones de este año").
+- **Decisiones del usuario**: insignia junto al nombre = **todos los títulos + número** (ya lo hace `Honors`, no la "vigente"); **vigente = ganadores 5ª ed.** (`is_current=true` en P. Narváez/Edu War/Dani).
+- Build verde. Insertados 15 títulos vía `execute_sql` (verificado: 0 huérfanos, 11/4).
+
+**Próximo:** fotos (bloque caro, sesión dedicada); campeones ed. 6 cuando se jueguen.
 
 ---
 

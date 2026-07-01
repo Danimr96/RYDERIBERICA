@@ -38,6 +38,9 @@ export interface Title {
   edition_number: number
   is_current: boolean
   note: string | null
+  /** Campeón que no está en el roster actual (jugador pasado). */
+  champion_name: string | null
+  team_id: TeamId | null
 }
 
 /** Insignias agregadas de un jugador (por torneo). */

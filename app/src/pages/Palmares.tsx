@@ -1,26 +1,37 @@
 import { Link } from 'react-router-dom'
 import { useRider } from '../lib/store'
-import { Avatar, TEAM_COLORS } from '../lib/ui'
-import type { Player, Tournament } from '../lib/types'
+import { Avatar, ExtAvatar, TEAM_COLORS } from '../lib/ui'
+import type { Player, Tournament, TeamId } from '../lib/types'
+
+/** Campeón resuelto: jugador del roster o campeón histórico externo (jugador pasado). */
+type Champ =
+  | { kind: 'player'; player: Player }
+  | { kind: 'ext'; name: string; team_id: TeamId }
 
 export default function Palmares() {
   const { edition, tournaments, titles, playersById, players, loading } = useRider()
   if (loading || !edition) return <div className="p-4 text-sm text-white/40">Cargando…</div>
 
-  const champ = (tournamentId: string, ed: number): Player | null => {
+  const champ = (tournamentId: string, ed: number): Champ | null => {
     const t = titles.find((x) => x.tournament_id === tournamentId && x.edition_number === ed)
-    return t?.player_id ? playersById.get(t.player_id) ?? null : null
+    if (!t) return null
+    if (t.player_id) {
+      const p = playersById.get(t.player_id)
+      return p ? { kind: 'player', player: p } : null
+    }
+    if (t.champion_name && t.team_id) return { kind: 'ext', name: t.champion_name, team_id: t.team_id }
+    return null
   }
 
   const editions = Array.from({ length: edition.number }, (_, i) => i + 1) // 1..6
   const current = edition.number
-  const hasCurrent = titles.some((t) => t.is_current || t.edition_number === current)
+  const hasCurrent = titles.some((t) => t.edition_number === current)
 
-  // recuento por equipo (de todos los títulos cargados)
+  // recuento por equipo (de todos los títulos cargados, incl. campeones externos)
   const tally = { salcerdos: 0, jamones: 0 }
   for (const t of titles) {
-    const p = t.player_id ? playersById.get(t.player_id) : null
-    if (p) tally[p.team_id]++
+    const team: TeamId | null = t.player_id ? playersById.get(t.player_id)?.team_id ?? null : t.team_id
+    if (team) tally[team]++
   }
   const anyTitles = titles.length > 0
 
@@ -56,16 +67,18 @@ export default function Palmares() {
       </h2>
       <div className="grid grid-cols-3 gap-2">
         {tournaments.map((t) => {
-          const p = champ(t.id, current)
+          const c = champ(t.id, current)
           return (
             <div key={t.id} className="rounded-2xl border border-line/60 bg-card/70 p-3 text-center">
               <div className="text-xl">{t.emoji}</div>
               <div className="text-[10px] font-bold text-white/55">{t.name}</div>
-              {p ? (
-                <Link to={`/jugador/${p.id}`} className="mt-2 flex flex-col items-center gap-1">
-                  <Avatar player={p} size={40} />
-                  <span className="text-xs font-bold">{p.alias}</span>
-                </Link>
+              {c ? (
+                <div className="mt-2 flex flex-col items-center gap-1">
+                  <ChampFace c={c} size={40} />
+                  <span className="text-xs font-bold">
+                    {c.kind === 'player' ? c.player.alias : c.name}
+                  </span>
+                </div>
               ) : (
                 <div className="mt-2 grid h-[62px] place-items-center text-[10px] text-white/30">
                   por cargar
@@ -108,6 +121,22 @@ export default function Palmares() {
   )
 }
 
+/** Cara del campeón: enlace a su ficha si es del roster; iniciales si es externo. */
+function ChampFace({ c, size, ring = true }: { c: Champ; size: number; ring?: boolean }) {
+  if (c.kind === 'player') {
+    return (
+      <Link to={`/jugador/${c.player.id}`} title={c.player.full_name}>
+        <Avatar player={c.player} size={size} ring={ring} />
+      </Link>
+    )
+  }
+  return (
+    <span title={c.name}>
+      <ExtAvatar name={c.name} teamId={c.team_id} size={size} ring={ring} />
+    </span>
+  )
+}
+
 function TournamentRow({
   t,
   editions,
@@ -115,7 +144,7 @@ function TournamentRow({
 }: {
   t: Tournament
   editions: number[]
-  champ: (tid: string, ed: number) => Player | null
+  champ: (tid: string, ed: number) => Champ | null
 }) {
   return (
     <tr>
@@ -124,13 +153,11 @@ function TournamentRow({
         <span className="text-[10px] font-bold text-white/60">{t.short}</span>
       </td>
       {editions.map((e) => {
-        const p = champ(t.id, e)
+        const c = champ(t.id, e)
         return (
           <td key={e} className="align-middle">
-            {p ? (
-              <Link to={`/jugador/${p.id}`} title={p.full_name}>
-                <Avatar player={p} size={30} ring={false} />
-              </Link>
+            {c ? (
+              <ChampFace c={c} size={30} ring={false} />
             ) : (
               <div className="mx-auto size-[30px] rounded-full border border-dashed border-line/60" />
             )}
