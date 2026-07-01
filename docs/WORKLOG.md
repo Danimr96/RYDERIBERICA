@@ -17,9 +17,24 @@ Log vivo de cambios, errores, decisiones y estado. **Añade entradas (append) al
 1. 📸 **Fotos** de jugadores → recortar de mosaicos en `other/` → Supabase Storage → `player.photo_url`. **Bloque caro en tokens** (procesar imágenes) → sesión dedicada. **Mapeo confirmado por el usuario: mosaico ROJO = Salcerdos 🔴 / mosaico AZUL = Jamones 🔵.** Falta identificar qué archivo de `other/` es cada mosaico y el orden de las caras.
 2. 🏆 **Campeones ed. 6 (este año)** de los 3 torneos Pre-Ryder → cuando se jueguen/los pase el usuario, insertar en `title` con `edition_number=6` (aparecen en la sección "Campeones 6ª edición" de Palmarés).
 
-**Creación de partidos:** ✅ HECHO — **panel de capitán** (Sesión 4). Cada capitán mete la alineación de su lado; partido completo cuando ambos. (Sorteo aleatorio con ruleta: descartado por el usuario.)
+**Creación de partidos:** ✅ HECHO — **panel de capitán/admin** (Sesiones 4-5). Cada capitán mete su lado; **admin (Dani) gestiona ambos equipos**. Partido completo cuando ambos lados tienen alineación. (Sorteo aleatorio con ruleta: descartado.)
+
+**⚠️ Enfoque de producto (aclarado por el usuario, Sesión 5):** la app **NO se usa en vivo** (para el directo usan **Gamebook**). Es un **tablero para antes/después**: cargar alineaciones y resultados, y sobre todo **ver estadísticas, gráficos y resultados**. Priorizar visualización sobre entrada en tiempo real.
 
 **Deploy:** ✅ HECHO (Sesión 2). **Palmarés histórico:** ✅ HECHO (Sesión 3).
+
+---
+
+## 2026-07-01 — Sesión 5 (rol admin + enfoque de producto)
+
+**Hecho:**
+- **Rol admin**: migración `player_add_is_admin` (`is_admin boolean default false`). **Dani = admin** (`update ... where alias='Dani'`).
+- `types.ts` Player + `is_admin`; `identity.tsx` expone `isAdmin` y `canScore` devuelve true para admin (además de capitán).
+- `App.tsx`: tab de gestión visible para capitán **o** admin (admin → etiqueta "Admin" 🛠️).
+- `Captain.tsx` refactor: el **admin ve un selector de equipo** y puede montar la alineación de **ambos** equipos; el capitán sigue restringido al suyo. Lógica de guardado igual (por lado, ambos shells).
+- Build verde.
+
+**Enfoque de producto aclarado** (ver Estado arriba): app para **antes/después**, no en vivo (usan Gamebook). Foco futuro: **estadísticas, gráficos, resultados**. → Próxima gran línea de trabajo candidata (además de fotos).
 
 ---
 

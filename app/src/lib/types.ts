@@ -70,6 +70,7 @@ export interface Player {
   record_h: number
   is_rookie: boolean
   is_captain: boolean
+  is_admin: boolean
   photo_url: string | null
   sort_order: number | null
 }

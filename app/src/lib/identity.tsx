@@ -10,6 +10,7 @@ interface Identity {
   ready: boolean // ya puede usar la app (código ok + identidad o espectador)
   unlocked: boolean
   me: Player | null
+  isAdmin: boolean
   isSpectator: boolean
   unlock: (code: string) => boolean
   identify: (playerId: string) => void
@@ -63,10 +64,12 @@ export function IdentityProvider({ children }: { children: ReactNode }) {
 
   const me = meId ? playersById.get(meId) ?? null : null
 
+  const isAdmin = !!me?.is_admin
+
   const canScore = useCallback(
     (playerIds: string[]) => {
       if (!me) return false
-      if (me.is_captain) return true
+      if (me.is_captain || me.is_admin) return true
       return playerIds.includes(me.id)
     },
     [me],
@@ -75,8 +78,8 @@ export function IdentityProvider({ children }: { children: ReactNode }) {
   const ready = unlocked && (!!me || spectator)
 
   const value = useMemo<Identity>(
-    () => ({ ready, unlocked, me, isSpectator: spectator, unlock, identify, spectate, logout, canScore }),
-    [ready, unlocked, me, spectator, unlock, identify, spectate, logout, canScore],
+    () => ({ ready, unlocked, me, isAdmin, isSpectator: spectator, unlock, identify, spectate, logout, canScore }),
+    [ready, unlocked, me, isAdmin, spectator, unlock, identify, spectate, logout, canScore],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

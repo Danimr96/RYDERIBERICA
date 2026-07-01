@@ -8,60 +8,65 @@ import type { Player, Side, TeamId } from '../lib/types'
 
 /** Convención fija de lados: Salcerdos 🔴 = lado A · Jamones 🔵 = lado B. */
 const SIDE_OF: Record<TeamId, Side> = { salcerdos: 'a', jamones: 'b' }
+const TEAMS: TeamId[] = ['salcerdos', 'jamones']
 
 /**
- * Panel de capitán — crear/editar partidos metiendo la alineación de TU equipo.
- * Cada capitán rellena solo su lado; el partido queda completo cuando ambos lo hacen.
+ * Panel de gestión — crear/editar partidos metiendo la alineación de un equipo.
+ * - Capitán: solo su equipo.
+ * - Admin (Dani): ambos equipos (con selector).
+ * El partido queda completo cuando ambos lados tienen alineación.
  */
 export default function Captain() {
   const { edition, sessions, players, playersById, matches, loading, refetch } = useRider()
-  const { me } = useIdentity()
+  const { me, isAdmin } = useIdentity()
 
   const [sessionId, setSessionId] = useState<string>('')
-  const [lineup, setLineup] = useState<string[][]>([]) // por hueco: playerIds de MI lado
+  const [teamTab, setTeamTab] = useState<TeamId>('salcerdos')
+  const [lineup, setLineup] = useState<string[][]>([]) // por hueco: playerIds del lado activo
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
 
-  const myTeam = me?.team_id
+  // Equipo activo: admin elige con el selector; capitán es el suyo fijo.
+  const activeTeam: TeamId | undefined = isAdmin ? teamTab : me?.team_id
   const session = sessions.find((s) => s.id === sessionId) ?? sessions[0]
   const perSide = session?.format === 'scramble_doubles' ? 2 : 1
-  const myPlayers = myTeam
+  const teamPlayers = activeTeam
     ? players
-        .filter((p) => p.team_id === myTeam)
+        .filter((p) => p.team_id === activeTeam)
         .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
     : []
-  const nSlots = Math.max(1, Math.ceil(myPlayers.length / perSide))
+  const nSlots = Math.max(1, Math.ceil(teamPlayers.length / perSide))
 
-  // Al cambiar de sesión, reconstruye el borrador desde lo ya guardado en BD.
+  // Al cambiar de sesión o de equipo activo, reconstruye el borrador desde lo guardado en BD.
   useEffect(() => {
-    if (!session || !myTeam) return
-    const mySide = SIDE_OF[myTeam]
+    if (!session || !activeTeam) return
+    const side = SIDE_OF[activeTeam]
     const slots: string[][] = Array.from({ length: nSlots }, () => [])
     for (const m of matches.filter((mm) => mm.session_id === session.id)) {
       const idx = m.number - 1
       if (idx < 0 || idx >= nSlots) continue
-      const mine = mySide === 'a' ? m.sideA : m.sideB
+      const mine = side === 'a' ? m.sideA : m.sideB
       slots[idx] = mine.players.map((p) => p.id)
     }
     setLineup(slots)
     setMsg(null)
     // Deps a propósito solo sesión/equipo: no re-sincronizamos con cada update de `matches`
-    // (realtime) para no pisar la alineación que el capitán está editando.
-  }, [session?.id, myTeam])
+    // (realtime) para no pisar la alineación que se está editando.
+  }, [session?.id, activeTeam])
 
   if (loading || !edition) return <div className="p-4 text-sm text-white/40">Cargando…</div>
-  if (!me?.is_captain || !myTeam || !session) {
+  if (!me || (!me.is_captain && !me.is_admin) || !session || !activeTeam) {
     return (
       <div className="p-6 text-center text-sm text-white/50">
-        🔒 Solo los capitanes pueden crear partidos.
+        🔒 Solo capitanes o admin pueden crear partidos.
       </div>
     )
   }
 
-  const mySide = SIDE_OF[myTeam]
-  const c = TEAM_COLORS[myTeam]
+  const side = SIDE_OF[activeTeam]
+  const c = TEAM_COLORS[activeTeam]
 
-  // jugadores de mi equipo ya usados en otros huecos (para no repetir)
+  // jugadores del equipo ya usados en otros huecos (para no repetir)
   const usedElsewhere = (slotIdx: number, pos: number) => {
     const used = new Set<string>()
     lineup.forEach((slot, i) =>
@@ -85,7 +90,7 @@ export default function Captain() {
   const oppPlayersOf = (slotIdx: number): Player[] => {
     const m = matches.find((mm) => mm.session_id === session.id && mm.number === slotIdx + 1)
     if (!m) return []
-    const opp = mySide === 'a' ? m.sideB : m.sideA
+    const opp = side === 'a' ? m.sideB : m.sideA
     return opp.players
   }
 
@@ -115,17 +120,17 @@ export default function Captain() {
     return created.id
   }
 
-  async function ensureSide(matchId: string, side: Side, teamId: TeamId): Promise<string> {
+  async function ensureSide(matchId: string, s: Side, teamId: TeamId): Promise<string> {
     const { data } = await supabase
       .from('match_side')
       .select('id')
       .eq('match_id', matchId)
-      .eq('side', side)
+      .eq('side', s)
       .maybeSingle()
     if (data) return data.id
     const { data: created, error } = await supabase
       .from('match_side')
-      .insert({ match_id: matchId, side, team_id: teamId, playing_handicap: null })
+      .insert({ match_id: matchId, side: s, team_id: teamId, playing_handicap: null })
       .select('id')
       .single()
     if (error || !created) {
@@ -133,7 +138,7 @@ export default function Captain() {
         .from('match_side')
         .select('id')
         .eq('match_id', matchId)
-        .eq('side', side)
+        .eq('side', s)
         .maybeSingle()
       if (again) return again.id
       throw error ?? new Error('No se pudo crear el lado')
@@ -142,11 +147,10 @@ export default function Captain() {
   }
 
   async function save() {
-    if (!session || !edition || !myTeam) return
+    if (!session || !edition || !activeTeam) return
     setSaving(true)
     setMsg(null)
     try {
-      // validación: sin jugadores repetidos y lados completos
       const all = lineup.flat().filter(Boolean)
       if (new Set(all).size !== all.length) throw new Error('Hay un jugador repetido en dos partidos.')
 
@@ -162,18 +166,18 @@ export default function Captain() {
         // ambos shells de lado, para que el partido tenga siempre lado A y B
         const aId = await ensureSide(matchId, 'a', 'salcerdos')
         const bId = await ensureSide(matchId, 'b', 'jamones')
-        const mySideId = mySide === 'a' ? aId : bId
+        const activeSideId = side === 'a' ? aId : bId
 
-        await supabase.from('match_player').delete().eq('match_side_id', mySideId)
+        await supabase.from('match_player').delete().eq('match_side_id', activeSideId)
         if (ids.length === 0) {
-          await supabase.from('match_side').update({ playing_handicap: null }).eq('id', mySideId)
+          await supabase.from('match_side').update({ playing_handicap: null }).eq('id', activeSideId)
         } else {
           const sidePlayers = ids.map((id) => playersById.get(id)).filter((p): p is Player => !!p)
           const ph = sidePlayingHandicap(sidePlayers, session, edition)
-          await supabase.from('match_side').update({ playing_handicap: ph }).eq('id', mySideId)
+          await supabase.from('match_side').update({ playing_handicap: ph }).eq('id', activeSideId)
           await supabase
             .from('match_player')
-            .insert(ids.map((pid) => ({ match_side_id: mySideId, player_id: pid })))
+            .insert(ids.map((pid) => ({ match_side_id: activeSideId, player_id: pid })))
         }
       }
       await refetch()
@@ -190,21 +194,51 @@ export default function Captain() {
   return (
     <div className="p-4 pb-8">
       <div className="flex items-center gap-2">
-        <h1 className="text-lg font-black">Panel de capitán</h1>
-        <span
-          className="rounded-full px-2 py-0.5 text-[11px] font-bold"
-          style={{ background: `${c.main}22`, color: c.main }}
-        >
-          🧢 {TEAM_LABEL[myTeam]}
-        </span>
+        <h1 className="text-lg font-black">{isAdmin ? 'Panel de admin' : 'Panel de capitán'}</h1>
+        {isAdmin ? (
+          <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-bold text-white/70">
+            🛠️ admin
+          </span>
+        ) : (
+          <span
+            className="rounded-full px-2 py-0.5 text-[11px] font-bold"
+            style={{ background: `${c.main}22`, color: c.main }}
+          >
+            🧢 {TEAM_LABEL[activeTeam]}
+          </span>
+        )}
       </div>
       <p className="mt-1 text-xs text-white/45">
-        Mete la alineación de tu equipo. El rival la mete por su lado; el partido se activa cuando
-        ambos capitanes han elegido.
+        Mete la alineación {isAdmin ? 'de cada equipo' : 'de tu equipo'}. El partido se activa cuando
+        ambos lados tienen jugadores.
       </p>
 
+      {/* Selector de equipo (solo admin) */}
+      {isAdmin && (
+        <div className="mt-3 flex gap-2">
+          {TEAMS.map((t) => {
+            const active = t === activeTeam
+            const tc = TEAM_COLORS[t]
+            return (
+              <button
+                key={t}
+                onClick={() => setTeamTab(t)}
+                className="flex-1 rounded-2xl border px-3 py-2 text-sm font-black transition"
+                style={{
+                  borderColor: active ? tc.main : 'rgba(255,255,255,0.12)',
+                  background: active ? `${tc.main}22` : 'transparent',
+                  color: active ? tc.main : 'rgba(255,255,255,0.5)',
+                }}
+              >
+                {TEAM_LABEL[t]}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
       {/* Selector de sesión */}
-      <div className="mt-4 flex gap-2">
+      <div className="mt-3 flex gap-2">
         {sessions.map((s) => {
           const active = s.id === session.id
           return (
@@ -226,10 +260,10 @@ export default function Captain() {
 
       <div className="mt-3 flex items-center justify-between text-[11px] text-white/45">
         <span>
-          {completos}/{nSlots} partidos con tu alineación
+          {completos}/{nSlots} partidos con alineación
         </span>
         <span>
-          {perSide === 2 ? 'Parejas (scramble)' : 'Individual'} · lado {mySide.toUpperCase()}
+          {perSide === 2 ? 'Parejas (scramble)' : 'Individual'} · lado {side.toUpperCase()}
         </span>
       </div>
 
@@ -256,7 +290,7 @@ export default function Captain() {
                         style={{ color: c.main }}
                       >
                         <option value="">— elegir jugador —</option>
-                        {myPlayers
+                        {teamPlayers
                           .filter((p) => p.id === value || !used.has(p.id))
                           .map((p) => (
                             <option key={p.id} value={p.id} className="bg-ink text-white">
@@ -300,7 +334,7 @@ export default function Captain() {
         disabled={saving}
         className="mt-4 w-full rounded-2xl bg-gold py-3 text-sm font-black text-ink disabled:opacity-50"
       >
-        {saving ? 'Guardando…' : 'Guardar mi alineación'}
+        {saving ? 'Guardando…' : `Guardar alineación · ${TEAM_LABEL[activeTeam]}`}
       </button>
     </div>
   )

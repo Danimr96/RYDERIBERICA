@@ -16,9 +16,19 @@ export default function App() {
   const { ready, me, isSpectator, logout } = useIdentity()
   const loc = useLocation()
 
-  // Los capitanes ven un tab extra para crear/editar partidos.
-  const nav = me?.is_captain
-    ? [...NAV.slice(0, 4), { to: '/capitan', label: 'Capitán', icon: '🧢', end: false }, ...NAV.slice(4)]
+  // Capitanes y admin ven un tab extra para crear/editar partidos.
+  const canManage = me?.is_captain || me?.is_admin
+  const nav = canManage
+    ? [
+        ...NAV.slice(0, 4),
+        {
+          to: '/capitan',
+          label: me?.is_admin ? 'Admin' : 'Capitán',
+          icon: me?.is_admin ? '🛠️' : '🧢',
+          end: false,
+        },
+        ...NAV.slice(4),
+      ]
     : NAV
 
   if (!loading && !ready) return <Login />
