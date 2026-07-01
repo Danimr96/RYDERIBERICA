@@ -14,7 +14,7 @@ Log vivo de cambios, errores, decisiones y estado. **Añade entradas (append) al
 - **Login/identidad** (código + elegir jugador + canScore). **Insignias de campeón** estilo PGA junto a nombres.
 
 **Pendiente (prioridad):**
-1. 📸 **Fotos** de jugadores → recortar de mosaicos rojo/azul en `other/` → Supabase Storage → `player.photo_url`. **Bloque caro en tokens** (procesar imágenes) → sesión dedicada.
+1. 📸 **Fotos** de jugadores → recortar de mosaicos en `other/` → Supabase Storage → `player.photo_url`. **Bloque caro en tokens** (procesar imágenes) → sesión dedicada. **Mapeo confirmado por el usuario: mosaico ROJO = Salcerdos 🔴 / mosaico AZUL = Jamones 🔵.** Falta identificar qué archivo de `other/` es cada mosaico y el orden de las caras.
 2. 🏆 **Campeones ed. 6 (este año)** de los 3 torneos Pre-Ryder → cuando se jueguen/los pase el usuario, insertar en `title` con `edition_number=6` (aparecen en la sección "Campeones 6ª edición" de Palmarés).
 
 **Sorteo:** descartado — los capitanes meten los partidos a mano.
