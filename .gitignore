@@ -1,0 +1,28 @@
+# Dependencias
+node_modules/
+app/node_modules/
+
+# Build
+app/dist/
+dist/
+dist-ssr/
+
+# Variables de entorno (las publishable keys van en Vercel)
+.env
+.env.*
+!.env.example
+app/.env
+app/.env.*
+!app/.env.example
+
+# Assets originales privados (mosaicos/fotos de los jugadores). No versionar.
+other/
+
+# Sistema / editor
+.DS_Store
+*.log
+logs/
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.local

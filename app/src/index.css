@@ -1,0 +1,64 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
+
+  /* Marca */
+  --color-salcerdos: #d21f2b;
+  --color-salcerdos-dark: #7a0f16;
+  --color-jamones: #1e4fd6;
+  --color-jamones-dark: #0b2a6b;
+  --color-gold: #ffd21f;
+
+  /* Fondo oscuro tipo broadcast */
+  --color-ink: #090c15;
+  --color-ink-2: #0f1424;
+  --color-card: #141a2e;
+  --color-line: #232a42;
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(210, 31, 43, 0.14), transparent 60%),
+      radial-gradient(1200px 600px at 85% -10%, rgba(30, 79, 214, 0.16), transparent 60%),
+      var(--color-ink);
+    color: #e8ecf6;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100svh;
+    overscroll-behavior-y: none;
+  }
+  #root {
+    min-height: 100svh;
+  }
+}
+
+@layer utilities {
+  .tnum {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum';
+  }
+  .safe-b {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 0.5rem);
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@keyframes pulse-live {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.live-dot {
+  animation: pulse-live 1.2s ease-in-out infinite;
+}
